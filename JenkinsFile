@@ -5,8 +5,8 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                dir('webapp') {            // folder that contains your pom.xml
-                    sh 'mvn clean package'
+                dir('webapp') {
+                    bat 'mvn clean package'
                 }
             }
         }
@@ -14,15 +14,20 @@ pipeline {
 
     post {
         success {
-            sh 'echo $GIT_COMMIT > /var/lib/jenkins/last_good_commit'
+            bat 'echo %GIT_COMMIT% > "%JENKINS_HOME%\\last_good_commit.txt"'
         }
         failure {
             script {
-                def lastGood = readFile('/var/lib/jenkins/last_good_commit').trim()
-                echo "Build failed. Rolling back to ${lastGood}"
-                sh "git checkout ${lastGood}"
-                dir('webapp') {
-                    sh 'mvn clean package'
+                def f = "${env.JENKINS_HOME}\\last_good_commit.txt"
+                if (fileExists(f)) {
+                    def lastGood = readFile(f).trim()
+                    echo "Build failed. Rolling back to ${lastGood}"
+                    bat "git checkout ${lastGood}"
+                    dir('webapp') {
+                        bat 'mvn clean package'
+                    }
+                } else {
+                    echo 'No previous good version saved yet'
                 }
             }
         }
