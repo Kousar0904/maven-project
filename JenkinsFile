@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    triggers { pollSCM('* * * * *') }
+
+    stages {
+        stage('Build') {
+            steps {
+                dir('webapp') {            // folder that contains your pom.xml
+                    sh 'mvn clean package'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            sh 'echo $GIT_COMMIT > /var/lib/jenkins/last_good_commit'
+        }
+        failure {
+            script {
+                def lastGood = readFile('/var/lib/jenkins/last_good_commit').trim()
+                echo "Build failed. Rolling back to ${lastGood}"
+                sh "git checkout ${lastGood}"
+                dir('webapp') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+    }
+}
