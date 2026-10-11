@@ -4,11 +4,7 @@ pipeline {
 
     stages {
         stage('Build') {
-            steps {
-                dir('webapp') {
-                    bat 'mvn clean package'
-                }
-            }
+            steps { bat 'mvn clean package' }
         }
     }
 
@@ -23,9 +19,7 @@ pipeline {
                     def lastGood = readFile(f).trim()
                     echo "Build failed. Rolling back to ${lastGood}"
                     bat "git checkout ${lastGood}"
-                    dir('webapp') {
-                        bat 'mvn clean package'
-                    }
+                    bat 'mvn clean package'
                 } else {
                     echo 'No previous good version saved yet'
                 }
